@@ -36,7 +36,9 @@ def main():
     else:
         LOG.error("subnets.config needs to exist!")
         print("Please create a config file of subnets at subnets.config")
-            
+           
+    scan_list = get_config()
+ 
     print("We are scanning.  Please see scan.log for more info....")
     LOG.debug("CIDR list is: {0}".format(scan_list))
 
@@ -70,6 +72,16 @@ def main():
 
     LOG.info("Found {0} physical machines.".format(len(physical_machines)))
 
+def read_config():
+    if os.path.exists('subnets.config'):
+        with open('subnets.config') as f:
+            scan_list = f.readlines()
+        config = [x.strip() for x in scan_list]
+        return config
+    else:
+        LOG.error("subnets.config needs to exist!")
+        print("Please create a config file of subnets at subnets.config")
+        sys.exit(1)
 
 def build_netbox_device (name, device_role, manufacturer, model_name, status, site, serial, asset_tag):
     """
