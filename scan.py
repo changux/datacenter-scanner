@@ -18,18 +18,20 @@ UseGSSAPI = paramiko.GSS_AUTH_AVAILABLE             # enable "gssapi-with-mic" a
 DoGSSAPIKeyExchange = paramiko.GSS_AUTH_AVAILABLE   # enable "gssapi-kex" key exchange, if supported by your python installation
 # UseGSSAPI = False
 # DoGSSAPIKeyExchange = False
-PORT=22
 
 def main():
     """
     Utilizes all the below functions to scan a list of IPs
     """
-
+    LOG.info("Starting the scan program")
     # Get username and password
     username, password = get_user()
 
     # List of CIDRs to scan
-    scan_list = ['192.168.6.0/24']
+    scan_list = ['192.168.10.0/24','192.168.6.0/24']
+
+    print("We are scanning.  Please see scan.log for more info....")
+    LOG.debug("CIDR list is: {0}".format(scan_list))
 
     # We want physical boxen, we will keep them here
     physical_machines = []
@@ -44,7 +46,7 @@ def main():
         if info is not None:
             physical_machines = collect_physical_machines(info, physical_machines)
 
-    print(json.dumps(physical_machines, indent=4, sort_keys=True))
+    print(json.dumps(physical_machines), indent=4, sort_keys=True)
     LOG.info("Found {0} physical machines.".format(len(physical_machines)))
 
 
@@ -81,14 +83,16 @@ def get_hosts(cidrs):
     except:
         LOG.error("Unexpected error:", sys.exc_info()[0])
         sys.exit(1)
-
+    
+    port = 22
+    nmap_args='-n -p' port ' --open -sV -A'
     hosts_list = []
     for cidr in cidrs:
         LOG.info("Scanning {0}....".format(cidr))
-        LOG.debug(nm.scan(hosts=cidr, arguments='-n -p 22 --open -sV -A'))
-        cidr_hosts = [(x, nm[x]['tcp'][22]['state']) for x in nm.all_hosts()]
-        for host, status in cidr_hosts:
-            LOG.deug("Host: {0} is {1}".format(host,status))
+        LOG.debug(json.dumps(nm.scan(hosts=cidr, arguments=nmap_args), indent=4, sort_keys=True))
+        cidr_hosts = [(x, nm[x]['tcp'][port]['state'], nm[x]['tcp'][port]['product'], nm[x]['tcp'][port]['version']) for x in nm.all_hosts()]
+        for host, status, product, version in cidr_hosts:
+            LOG.debug("{0:15} {2} version {3}".format(host,status, product, version))
             if status == "open":
                 hosts_list.append(host)
     return hosts_list
@@ -121,7 +125,7 @@ def get_data(endpoint, username, password):
         "service_tag": ""
     }
     """
-
+    ssh_port=22
     # The command to get the data
     command = '''
 echo "{"
@@ -140,16 +144,16 @@ echo "}"
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         LOG.info('Connecting to {0}'.format(endpoint))
         if not UseGSSAPI and not DoGSSAPIKeyExchange:
-            LOG.info("Basic key auth")
-            client.connect(endpoint, PORT, username, password, timeout=2)
+            LOG.debug("Basic key auth")
+            client.connect(endpoint, ssh_port, username, password, timeout=2)
         else:
             try:
-                LOG.info("gssapikeyexchane")
-                client.connect(endpoint, PORT, username, gss_auth=UseGSSAPI,
+                LOG.debug("gssapikeyexchane")
+                client.connect(endpoint, ssh_port, username, gss_auth=UseGSSAPI,
                                gss_kex=DoGSSAPIKeyExchange, timeout=2)
             except Exception:
-                LOG.info("password auth")
-                client.connect(endpoint, PORT, username, password, timeout=2)
+                LOG.debug("password auth")
+                client.connect(endpoint, ssh_port, username, password, timeout=2)
 
         stdin, stdout, stderr = client.exec_command(command)
 
@@ -163,27 +167,34 @@ echo "}"
         raw = stdout.read()
         if raw:
             decoded = raw.decode("utf-8")
-            json_output = json.loads(decoded)
-            client.close()
-            LOG.info("Success!")
-            return json_output
+            try:
+                json_output = json.loads(decoded)
+                LOG.info("Success!")
+                client.close()
+                return json_output
+            except json.decoder.JSONDecodeError:
+                LOG.error("Cannot decode output as JSON!")
+                LOG.debug(decoded)
+                client.close()
+                return None
+
         else:
             return None
 
     except paramiko.ssh_exception.AuthenticationException as e:
-        LOG.info('Bad Auth')
+        LOG.warning('Bad Auth')
         pass
     except paramiko.ssh_exception.BadHostKeyException as e:
-        LOG.info('Bad Host Key')
+        LOG.warning('Bad Host Key')
         pass
     except paramiko.ssh_exception.NoValidConnectionsError as e:
-        LOG.error(e)
+        LOG.warning(e)
         pass
     except paramiko.ssh_exception.SSHException as e:
-        LOG.error(e)
+        LOG.warning(e)
         pass
     except ConnectionResetError as e:
-        LOG.error("Connection Reset Error")
+        LOG.warning("Connection Reset Error")
         pass
     except Exception as e:
         LOG.error('*** Caught exception: %s: %s' % (e.__class__, e))
@@ -195,8 +206,8 @@ echo "}"
         sys.exit(1)
 
 if __name__ == "__main__":
-    logging.basicConfig(format="%(asctime)s - %(levelname)s - %(name)s - %(message)s")
+    logging.basicConfig(filename='scan.log', format="%(asctime)s %(levelname)7s %(funcName)s %(message)s")
     LOG = logging.getLogger("datacenter_scanner")
-    LOG.setLevel(logging.INFO)
-    main()
+    LOG.setLevel(logging.DEBUG)
+    
     main()
