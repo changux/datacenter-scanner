@@ -9,6 +9,7 @@ import socket
 import sys
 import traceback
 import json
+import socket
 
 # Paramiko client configuration
 UseGSSAPI = paramiko.GSS_AUTH_AVAILABLE             # enable "gssapi-with-mic" authentication, if supported by your python installation
@@ -29,7 +30,12 @@ def main():
     physical_machines = []
 
     # Send the commands
-    for host in get_hosts(scan_list):
+    hosts = get_hosts(scan_list)
+    hosts = sorted(hosts.items(), key=lambda item: socket.inet_aton(item[0]))
+    print(hosts)
+    print("Found {0} Hosts".format(len(hosts)))
+    
+    for host in hosts:
         info = get_data(host, username, password)
         if info is not None:
             physical_machines = collect_physical_machines(info, physical_machines)
@@ -74,11 +80,12 @@ def get_hosts(cidrs):
     hosts_list = []
     for cidr in cidrs:
         print("Scanning {0}....".format(cidr))
-        nm.scan(hosts=cidr, arguments='-n -sP -PE -PA21,23,80,3389')
-        cidr_hosts = [(x, nm[x]['status']['state']) for x in nm.all_hosts()]
+        print(nm.scan(hosts=cidr, arguments='-n -p 22 --open -sV'))
+        cidr_hosts = [(x, nm[x]['tcp'][22]['state']) for x in nm.all_hosts()]
+        print(cidr_hosts)
         for host, status in cidr_hosts:
             #print("Host: {0} is {1}".format(host,status))
-            if status == "up":
+            if status == "open":
                 hosts_list.append(host)
     return hosts_list
 
