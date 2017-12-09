@@ -29,7 +29,7 @@ def main():
 
     # List of CIDRs to scan
     scan_list = ['192.168.10.0/24','192.168.6.0/24']
-
+    
     print("We are scanning.  Please see scan.log for more info....")
     LOG.debug("CIDR list is: {0}".format(scan_list))
 
@@ -46,7 +46,10 @@ def main():
         if info is not None:
             physical_machines = collect_physical_machines(info, physical_machines)
 
-    print(json.dumps(physical_machines), indent=4, sort_keys=True)
+    print(json.dumps(physical_machines, indent=4, sort_keys=True))
+    with open("phsyical_machines.json", 'w') as outfile:
+        json.dump(physical_machines, outfile)
+
     LOG.info("Found {0} physical machines.".format(len(physical_machines)))
 
 
@@ -85,7 +88,7 @@ def get_hosts(cidrs):
         sys.exit(1)
     
     port = 22
-    nmap_args='-n -p' port ' --open -sV -A'
+    nmap_args='-n -p {} --open -sV -A '.format(port)
     hosts_list = []
     for cidr in cidrs:
         LOG.info("Scanning {0}....".format(cidr))
@@ -206,7 +209,7 @@ echo "}"
         sys.exit(1)
 
 if __name__ == "__main__":
-    logging.basicConfig(filename='scan.log', format="%(asctime)s %(levelname)7s %(funcName)s %(message)s")
+    logging.basicConfig(filename='scan.log', format="%(asctime)s %(levelname)7s  %(funcName)s %(message)s")
     LOG = logging.getLogger("datacenter_scanner")
     LOG.setLevel(logging.DEBUG)
     
