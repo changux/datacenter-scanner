@@ -24,12 +24,15 @@ def main():
     Utilizes all the below functions to scan a list of IPs
     """
     LOG.info("Starting the scan program")
+
     # Get username and password
     username, password = get_user()
 
     # List of CIDRs to scan
-    scan_list = ['192.168.10.0/24','192.168.6.0/24']
-    
+    with open('subnets.config') as f:
+        scan_list = f.readlines()
+    scan_list = [x.strip() for x in scan_list]
+            
     print("We are scanning.  Please see scan.log for more info....")
     LOG.debug("CIDR list is: {0}".format(scan_list))
 
@@ -46,20 +49,32 @@ def main():
         if info is not None:
             physical_machines = collect_physical_machines(info, physical_machines)
 
+    # Create a file of physical machines
     print(json.dumps(physical_machines, indent=4, sort_keys=True))
     with open("phsyical_machines.json", 'w') as outfile:
         json.dump(physical_machines, outfile)
 
+    # Create a file of netbox devices
+    netbox_devices = []
+    for machine in physical_machines:
+        netbox = build_netbox_device(machine['name'], 'unknown', 'Dell', machine['model'], 'Inventory', 'Fortrust',machine['service_tag'], machine['service_tag'])
+        netbox_devices.append(netbox)
+    with open("netbox_devices.json", 'w') as outfile:
+        json.dump(netbox_devices, outfile)
+
+
+
     LOG.info("Found {0} physical machines.".format(len(physical_machines)))
 
 
-def build_netbox_device (device_role, manufacturer, model_name, status, site):
+def build_netbox_device (name, device_role, manufacturer, model_name, status, site, serial, asset_tag):
     """
     Builds a JSON object that we can submit to netbox
     """
 
-    device = { 'device_role': device_role, 'manufacturer': manufacturer, 'model_name': model_name, 'status': status, 'site': site }
-    return json.loads(device)
+    device = { 'device_role': device_role, 'manufacturer': manufacturer, 'model_name': model_name, 'status': status, 'site': site , 'serial': serial, 'asset_tag': asset_tag, 'name': name}
+
+    return device
 
 
 def collect_physical_machines(json_data, physical_boxen):

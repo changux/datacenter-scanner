@@ -1,3 +1,6 @@
+subnets.config
+*.swp
+netbox_devices.json
 phsyical_machines.json
 virtualenv*
 *.log
