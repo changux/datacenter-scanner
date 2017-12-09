@@ -1,3 +1,4 @@
+physical_machines.json
 virtualenv*
 *.log
 __pycache__
