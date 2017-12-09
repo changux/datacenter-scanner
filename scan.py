@@ -29,9 +29,13 @@ def main():
     username, password = get_user()
 
     # List of CIDRs to scan
-    with open('subnets.config') as f:
-        scan_list = f.readlines()
-    scan_list = [x.strip() for x in scan_list]
+    if os.path.exists('subnets.config'):
+        with open('subnets.config') as f:
+            scan_list = f.readlines()
+        scan_list = [x.strip() for x in scan_list]
+    else:
+        LOG.error("subnets.config needs to exist!")
+        print("Please create a config file of subnets at subnets.config")
             
     print("We are scanning.  Please see scan.log for more info....")
     LOG.debug("CIDR list is: {0}".format(scan_list))
