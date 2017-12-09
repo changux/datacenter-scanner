@@ -207,8 +207,8 @@ echo "}"
                 client.close()
                 return json_output
             except json.decoder.JSONDecodeError:
-                LOG.error("Cannot decode output as JSON!")
-                LOG.debug(decoded)
+                LOG.error("Cannot decode output as JSON from {0}".format(endpoint))
+                LOG.error("Bad Output: {0}".format(decoded))
                 client.close()
                 return None
 
