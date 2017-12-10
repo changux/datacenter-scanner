@@ -72,7 +72,7 @@ def main():
 
     LOG.info("Found {0} physical machines.".format(len(physical_machines)))
 
-def read_config():
+def get_config():
     if os.path.exists('subnets.config'):
         with open('subnets.config') as f:
             scan_list = f.readlines()
