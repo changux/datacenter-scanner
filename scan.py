@@ -164,8 +164,8 @@ def get_data(endpoint, username, password):
     command = '''
 echo "{"
 echo '"name":' '"'"$(hostname)"'"',
-echo '"service_tag":' '"'"$(omreport chassis info | grep Service\ Tag | awk '{print $5}')"'"',
-echo '"model":' '"'"$(omreport chassis info | grep Model | awk '{print $4 " " $5}')"'"',
+echo '"service_tag":' '"'"$(/opt/dell/srvadmin/sbin/omreport chassis info | grep Service\ Tag | awk '{print $5}')"'"',
+echo '"model":' '"'"$(/opt/dell/srvadmin/sbin/omreport chassis info | grep Model | awk '{print $4 " " $5}')"'"',
 echo '"ipaddress":' '"'"$(facter ipaddress)"'"',
 echo '"is_virtual":' '"'"$(facter is_virtual)"'"'
 echo "}"
