@@ -212,6 +212,9 @@ echo "}"
                 LOG.error("Bad Output: {0}".format(decoded))
                 client.close()
                 return None
+            except Exception as e:
+                LOG.error(e)
+                return None
 
         else:
             return None
