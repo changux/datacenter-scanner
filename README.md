@@ -10,7 +10,7 @@ Create subnets.config and fill it with the subnets you want to scan
 
 `source virtualenv-scanner/bin/activate`
 
-`pip3 install -r requirements.txt`
+`pip install -r requirements.txt`
 
 `python3 scan.py`
 
