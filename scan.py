@@ -64,13 +64,13 @@ def main():
     netbox_devices = []
     for machine in physical_machines:
         netbox = build_netbox_device(machine['name'], 'unknown', 'Dell', machine['model'], 'Inventory', 'Fortrust',machine['service_tag'], machine['service_tag'])
-        netbox_devices.append(netbox)
+        if netbox:
+            netbox_devices.append(netbox)
     with open("netbox_devices.json", 'w') as outfile:
         json.dump(netbox_devices, outfile)
 
-
-
     LOG.info("Found {0} physical machines.".format(len(physical_machines)))
+    LOG.info("Built {0} netbox devices.".format(len(netbox_devices)))
 
 def get_config():
     if os.path.exists('subnets.config'):
@@ -87,10 +87,11 @@ def build_netbox_device (name, device_role, manufacturer, model_name, status, si
     """
     Builds a JSON object that we can submit to netbox
     """
-
-    device = { 'device_role': device_role, 'manufacturer': manufacturer, 'model_name': model_name, 'status': status, 'site': site , 'serial': serial, 'asset_tag': asset_tag, 'name': name}
-
-    return device
+    if name and device_role and manufacturer and model_name and status and site and serial and asset_tag:
+        device = { 'device_role': device_role, 'manufacturer': manufacturer, 'model_name': model_name, 'status': status, 'site': site , 'serial': serial, 'asset_tag': asset_tag, 'name': name}
+        return device
+    else:
+        return None
 
 
 def collect_physical_machines(json_data, physical_boxen):
