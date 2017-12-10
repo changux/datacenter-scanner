@@ -6,7 +6,11 @@ This can be used to scan datacenters for physical and virtual machines
 
 Create subnets.config and fill it with the subnets you want to scan
 
-`source virtualenv-scanner/bin/activate` to create the virtualenv
+`virtualenv virtualenv-scanner`
+
+`source virtualenv-scanner/bin/activate`
+
+`pip3 install -r requirements.txt`
 
 `python3 scan.py`
 
