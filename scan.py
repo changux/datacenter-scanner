@@ -99,7 +99,8 @@ def collect_physical_machines(json_data, physical_boxen):
 
     if json_data["is_virtual"] == "false":
         try:
-            physical_boxen.append(json_data)
+            if json_data not in physcial_boxen.items():
+                physical_boxen.append(json_data)
         except NameError:
             physical_boxen = [json_data]
 
