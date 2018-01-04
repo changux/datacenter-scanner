@@ -12,6 +12,7 @@ import json
 import socket
 import time
 import logging
+import yaml
 
 # Paramiko client configuration
 UseGSSAPI = paramiko.GSS_AUTH_AVAILABLE             # enable "gssapi-with-mic" authentication, if supported by your python installation
@@ -37,7 +38,7 @@ def main():
         LOG.error("subnets.config needs to exist!")
         print("Please create a config file of subnets at subnets.config")
            
-    scan_list = get_config()
+    scan_list = get_subnets()
  
     print("We are scanning.  Please see scan.log for more info....")
     LOG.debug("CIDR list is: {0}".format(scan_list))
@@ -72,16 +73,21 @@ def main():
     LOG.info("Found {0} physical machines.".format(len(physical_machines)))
     LOG.info("Built {0} netbox devices.".format(len(netbox_devices)))
 
-def get_config():
-    if os.path.exists('subnets.config'):
-        with open('subnets.config') as f:
-            scan_list = f.readlines()
-        config = [x.strip() for x in scan_list]
-        return config
+def get_subnets():
+    config_file = 'config.yaml'
+    if os.path.exists(config_file):
+        config = yaml.load(open(config_file, "r"))
+        subnets = []
+        for site in config['sites']:
+            for subnet in site['subnets']:
+                subnets.append(subnet)
+        print(subnets)
+        return subnets
     else:
-        LOG.error("subnets.config needs to exist!")
-        print("Please create a config file of subnets at subnets.config")
+        LOG.error("{0} needs to exist!".format(config_file))
+        print("Please create a config file at {0}".format(config_file))
         sys.exit(1)
+
 
 def build_netbox_device (name, device_role, manufacturer, model_name, status, site, serial, asset_tag):
     """
@@ -216,7 +222,6 @@ echo "}"
             except Exception as e:
                 LOG.error(e)
                 return None
-
         else:
             return None
 
