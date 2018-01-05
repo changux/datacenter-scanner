@@ -29,23 +29,15 @@ def main():
     # Get username and password
     username, password = get_user()
 
-    # List of CIDRs to scan
-    if os.path.exists('subnets.config'):
-        with open('subnets.config') as f:
-            scan_list = f.readlines()
-        scan_list = [x.strip() for x in scan_list]
-    else:
-        LOG.error("subnets.config needs to exist!")
-        print("Please create a config file of subnets at subnets.config")
-           
     scan_list = get_subnets()
  
     print("We are scanning.  Please see scan.log for more info....")
     LOG.debug("CIDR list is: {0}".format(scan_list))
 
     # We want physical boxen, we will keep them here
-    physical_machines = []
-
+    all_machines = [None]
+    physical_machines = [None]
+    
     # Send the commands
     hosts = get_hosts(scan_list)
     hosts = sorted(hosts, key=lambda item: socket.inet_aton(item))
@@ -54,12 +46,16 @@ def main():
     for host in hosts:
         info = get_data(host, username, password)
         if info is not None:
+            all_machines.append(info)
             physical_machines = collect_physical_machines(info, physical_machines)
 
-    # Create a file of physical machines
-    print(json.dumps(physical_machines, indent=4, sort_keys=True))
+    # Create a file of physical machines and all machines
+    LOG.debug(json.dumps(physical_machines, indent=4, sort_keys=True))
+    LOG.debug(json.dumps(all_machines, indent=4, sort_keys=True))
     with open("phsyical_machines.json", 'w') as outfile:
         json.dump(physical_machines, outfile)
+    with open("all_machines.json", 'w') as outfile:
+        json.dump(all_machines, outfile)
 
     # Create a file of netbox devices
     netbox_devices = []
@@ -73,7 +69,11 @@ def main():
     LOG.info("Found {0} physical machines.".format(len(physical_machines)))
     LOG.info("Built {0} netbox devices.".format(len(netbox_devices)))
 
+
 def get_subnets():
+    """
+    Scans the config file for subnets in the different sites.  Compiles them all into one big list
+    """
     config_file = 'config.yaml'
     if os.path.exists(config_file):
         config = yaml.load(open(config_file, "r"))
@@ -81,7 +81,7 @@ def get_subnets():
         for site in config['sites']:
             for subnet in site['subnets']:
                 subnets.append(subnet)
-        print(subnets)
+        LOG.debug("Subnets compiled: {0}".format(subnets))
         return subnets
     else:
         LOG.error("{0} needs to exist!".format(config_file))

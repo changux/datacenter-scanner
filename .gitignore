@@ -1,4 +1,6 @@
+all_machines.json
 config.yaml
+config.yaml.bak
 subnets.config
 *.swp
 netbox_devices.json
